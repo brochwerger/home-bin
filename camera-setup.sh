@@ -10,15 +10,13 @@ help()
 }
 
 location="yaffo"
-camera="video4"
+camera="922"
 
 while getopts ":l:c:gh" option; do
    case $option in
 	l) location=$OPTARG;;
 	c) camera=$OPTARG;;
-    g) # Invoke graphical configurator
-        guvcview --control_panel -d /dev/$camera >& /dev/null
-        exit;;
+    g) fire_gui=true;; # Invoke graphical configurator
     h) 
         help
         exit;;
@@ -28,28 +26,35 @@ while getopts ":l:c:gh" option; do
    esac
 done
 
+device=$(v4l2-ctl --list-devices | awk -v camera="$camera" 'c&&!--c; index($0,camera){c=1}' | sed -e 's/^[[:space:]]*//')
+
 echo $camera
 echo $location
+echo $device
 
-#v4l2-ctl -d /dev/$camera --set-ctrl zoom_absolute=125
-v4l2-ctl -d /dev/$camera --set-ctrl brightness=100
-v4l2-ctl -d /dev/$camera --set-ctrl saturation=128
-v4l2-ctl -d /dev/$camera --set-ctrl tilt_absolute=-36000
+if [ $fire_gui ]
+then
+    guvcview --control_panel -d $device >& /dev/null
+else 
 
-if [ "$location" = "poas" ]
-then
-    v4l2-ctl -d /dev/$camera --set-ctrl zoom_absolute=110
-elif [ "$location" = "yaffo" ]
-then
-    v4l2-ctl -d /dev/$camera --set-ctrl zoom_absolute=115
-    v4l2-ctl -d /dev/$camera --set-ctrl backlight_compensation=1
-elif [ "$location" = "z-gila" ]
-then
-    v4l2-ctl -d /dev/$camera --set-ctrl zoom_absolute=125
-    v4l2-ctl -d /dev/$camera --set-ctrl brightness=150
-    v4l2-ctl -d /dev/$camera --set-ctrl tilt_absolute=-6000
+    #v4l2-ctl -d $device --set-ctrl zoom_absolute=125
+    v4l2-ctl -d $device --set-ctrl brightness=100
+    v4l2-ctl -d $device --set-ctrl saturation=128
+    v4l2-ctl -d $device --set-ctrl tilt_absolute=-36000
 
-# else
-#     echo 'Usage: camera-setup yaffo|poas|z-gila'
+    if [ "$location" = "poas" ]
+    then
+        v4l2-ctl -d $device --set-ctrl zoom_absolute=110
+    elif [ "$location" = "yaffo" ]
+    then
+        v4l2-ctl -d $device --set-ctrl zoom_absolute=115
+        v4l2-ctl -d $device --set-ctrl backlight_compensation=1
+    elif [ "$location" = "z-gila" ]
+    then
+        v4l2-ctl -d $device --set-ctrl zoom_absolute=125
+        v4l2-ctl -d $device --set-ctrl brightness=150
+        v4l2-ctl -d $device --set-ctrl tilt_absolute=-6000
+
+    fi
+
 fi
-
